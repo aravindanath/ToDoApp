@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -63,10 +64,9 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFDED6D6) // Light gray background
-                ){
+                ) {
                     MainPage()
                 }
-
 
 
             }
@@ -75,35 +75,37 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
 @Composable
 fun MainPage() {
 
 
     val myContext = LocalContext.current
     val todoName = remember { mutableStateOf("") }
-    val itemsList =  readData(myContext)
+    val itemsList = readData(myContext)
+    val deleteDialogStatus = remember { mutableStateOf(false) }
+    val clickedItemIndex = remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
         Spacer(modifier = Modifier.padding(15.dp))
-        Row (
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            TextField(value = todoName.value,
+            TextField(
+                value = todoName.value,
                 onValueChange = {
                     todoName.value = it
                 },
 
-                label = { Text(text = "Enter Task",fontSize = 15.sp) },
+                label = { Text(text = "Enter Task", fontSize = 15.sp) },
 
-               // colour // TextFieldColors has been deprecated
+                // colour // TextFieldColors has been deprecated
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
@@ -113,7 +115,8 @@ fun MainPage() {
                     unfocusedContainerColor = Color(0xFF5ABBD3)
                 ),
                 shape = RoundedCornerShape(5.dp),
-                modifier = Modifier.border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+                modifier = Modifier
+                    .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
                     .weight(7f)
                     .height(60.dp),
                 singleLine = true,
@@ -128,11 +131,12 @@ fun MainPage() {
                         itemsList.add(todoName.value)
                         writeDate(itemsList, myContext) // Save the updated list
                         todoName.value = "" // Clear the input field after adding
-                    }else{
+                    } else {
                         Toast.makeText(myContext, "Please enter a task", Toast.LENGTH_SHORT).show()
                     }
                 },
-                modifier = Modifier.weight(3f)
+                modifier = Modifier
+                    .weight(3f)
                     .height(60.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(id = R.color.green),
@@ -154,11 +158,11 @@ fun MainPage() {
         }
 
         LazyColumn {
-            items (
+            items(
                 count = itemsList.size, // Replace with your dynamic list size
                 itemContent = { index ->
                     val item = itemsList[index]
-                    Card (
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(5.dp),
@@ -186,26 +190,63 @@ fun MainPage() {
                             )
                             // Add any additional UI elements here, like a delete button
 
-                           Row (
+                            Row(
 
-                           ){
-                               IconButton(onClick = {}) {
-                                   Icon(Icons.Filled.Edit, contentDescription = "Edit", tint = Color.White)
-                               }
-                               IconButton(onClick = {}) {
-                                   Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.White)
-                               }
-                           }
+                            ) {
+                                IconButton(onClick = {}) {
+                                    Icon(
+                                        Icons.Filled.Edit,
+                                        contentDescription = "Edit",
+                                        tint = Color.White
+                                    )
+                                }
+                                IconButton(onClick = {
+                                    deleteDialogStatus.value = true
+                                    clickedItemIndex.value = index
+                                }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
 
 
                         }
                     }
-                    
+
                 }
             )
+        }
+
+        if(deleteDialogStatus.value){
+            AlertDialog(onDismissRequest = {
+                deleteDialogStatus.value = false
+            },
+                title = { Text(text = "Delete Task") },
+                text = { Text(text = "Are you sure you want to delete this task?") },
+                confirmButton = {
+                    Button(onClick = {
+                        itemsList.removeAt(clickedItemIndex.value)
+                        writeDate(itemsList, myContext) // Save the updated list after deletion
+                        deleteDialogStatus.value = false
+                    }) {
+                        Text(text = "Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        deleteDialogStatus.value = false
+                    }) {
+                        Text(text = "No")
+                    }
+                }
+            )
+            }
         }
 
     }
 
 
-}
+
