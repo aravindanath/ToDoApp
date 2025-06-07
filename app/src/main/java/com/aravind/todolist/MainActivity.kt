@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,21 +25,15 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -49,7 +44,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aravind.todolist.ui.theme.TODOListTheme
@@ -84,6 +78,9 @@ fun MainPage() {
     val itemsList = readData(myContext)
     val deleteDialogStatus = remember { mutableStateOf(false) }
     val clickedItemIndex = remember { mutableStateOf(0) }
+    val updateDialogStatus = remember { mutableStateOf(false) }
+    val clickedItem = remember { mutableStateOf("") }
+    val textDialogStatus = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -186,14 +183,23 @@ fun MainPage() {
                                 color = Color.White,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f) // Allow text to take available space
+                                modifier = Modifier
+                                    .weight(1f) // Allow text to take available space
+                                    .clickable{
+                                        clickedItem.value = item // Set the current item to the input field for editing
+                                        textDialogStatus.value = true
+                                    }
                             )
                             // Add any additional UI elements here, like a delete button
 
                             Row(
 
                             ) {
-                                IconButton(onClick = {}) {
+                                IconButton(onClick = {
+                                    updateDialogStatus.value = true
+                                    clickedItemIndex.value = index
+                                    clickedItem.value =item // Set the current item to the input field for editing
+                                }) {
                                     Icon(
                                         Icons.Filled.Edit,
                                         contentDescription = "Edit",
@@ -244,6 +250,58 @@ fun MainPage() {
                 }
             )
             }
+
+        if(updateDialogStatus.value){
+            AlertDialog(onDismissRequest = {
+                updateDialogStatus.value = false
+            },
+                title = { Text(text = "Update Task") },
+                text = { TextField(
+                    value = clickedItem.value,
+                    onValueChange = {
+                    clickedItem.value = it
+                }) },
+                confirmButton = {
+                    Button(onClick = {
+                        itemsList[clickedItemIndex.value] = clickedItem.value
+                        writeDate(itemsList, myContext) // Save the updated list after deletion
+                        updateDialogStatus.value = false
+                        Toast.makeText(myContext, "Task Updated", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text(text = "Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        updateDialogStatus.value = false
+                    }) {
+                        Text(text = "No")
+                    }
+                }
+            )
+        }
+
+
+        if(textDialogStatus.value){
+            AlertDialog(onDismissRequest = {
+                textDialogStatus.value = false
+            },
+                title = { Text(text = "Todo Items") },
+                text = {
+                    Text(text = clickedItem.value)
+                },
+
+                confirmButton = {
+                    Button(onClick = {
+
+                        textDialogStatus.value = false
+
+                    }) {
+                        Text(text = "OK")
+                    }
+                }
+            )
+        }
         }
 
     }
